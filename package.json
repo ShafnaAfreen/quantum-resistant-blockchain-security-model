@@ -1,0 +1,23 @@
+{
+  "name": "pq-transaction-registry",
+  "version": "1.0.0",
+  "description": "Layers 5 & 7 (Smart Contract + Verification/Storage) of the Quantum-Resistant Adaptive Transaction DApp",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "demo": "hardhat run scripts/relay.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.5"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "axios": "^1.7.2"
+  }
+}
