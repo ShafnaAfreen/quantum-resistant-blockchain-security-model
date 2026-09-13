@@ -1,6 +1,6 @@
 # Layers 5 & 7 — Smart Contract + Verification/Storage
 
-Part 2 of the Quantum-Resistant Adaptive Transaction DApp: the
+Michelle's part of the Quantum-Resistant Adaptive Transaction DApp: the
 Solidity contract that decides normal-vs-high-risk, validates delegation
 certs, enforces the revocation registry, and writes the immutable
 on-chain transaction record — plus the off-chain relay that bridges it to
