@@ -1,0 +1,1841 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R] /Count 7 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 4417 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 770 Td
+(Technical project documentation) Tj
+ET
+BT
+/F2 18 Tf
+45 756 Td
+(Quantum-Resistant Blockchain Security Model) Tj
+ET
+BT
+/F1 9 Tf
+45 742 Td
+(A practical guide to the post-quantum transaction demo: React wallet UI,) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(MetaMask, Hardhat, PQC verification service, relay, and Solidity registry.) Tj
+ET
+BT
+/F1 9 Tf
+45 714 Td
+(Repository: quantum-resistant-blockchain-security-model) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(Purpose: explain how the project works, how to run it locally, and where the) Tj
+ET
+BT
+/F1 9 Tf
+45 686 Td
+(important logic lives.) Tj
+ET
+BT
+/F2 13 Tf
+45 672 Td
+(1. What this project demonstrates) Tj
+ET
+BT
+/F1 9 Tf
+45 658 Td
+(This project is a local Ethereum-style payment demo with an additional) Tj
+ET
+BT
+/F1 9 Tf
+45 644 Td
+(post-quantum cryptography \(PQC\) verification step. A user enters a recipient) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(and ETH amount in a React application. Before the user?s wallet is allowed to) Tj
+ET
+BT
+/F1 9 Tf
+45 616 Td
+(make the payment, an off-chain relay obtains a PQC signature verification) Tj
+ET
+BT
+/F1 9 Tf
+45 602 Td
+(result. The Solidity contract then records the authorized payment and) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(transfers the ETH only when the same wallet confirms it through MetaMask.) Tj
+ET
+BT
+/F1 9 Tf
+45 574 Td
+(The design separates responsibilities deliberately:) Tj
+ET
+BT
+/F1 9 Tf
+45 560 Td
+(- Browser / React UI: collects the transaction details and asks the user?s) Tj
+ET
+BT
+/F1 9 Tf
+45 546 Td
+(MetaMask wallet to approve the final payment.) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(- PQC backend: chooses a PQC algorithm, creates keys, signs, and verifies) Tj
+ET
+BT
+/F1 9 Tf
+45 518 Td
+(off-chain.) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(- Relay: bridges the browser, PQC HTTP service, and blockchain. It has) Tj
+ET
+BT
+/F1 9 Tf
+45 490 Td
+(authority to authorize a payment, but cannot spend the user?s ETH.) Tj
+ET
+BT
+/F1 9 Tf
+45 476 Td
+(- Smart contract: independently checks authorization, epoch certificate) Tj
+ET
+BT
+/F1 9 Tf
+45 462 Td
+(status, thresholds, and the exact sender/amount before transferring ETH and) Tj
+ET
+BT
+/F1 9 Tf
+45 448 Td
+(recording an immutable event.) Tj
+ET
+BT
+/F1 9 Tf
+45 434 Td
+(React form \(localhost:5173\)) Tj
+ET
+BT
+/F1 9 Tf
+45 420 Td
+(? POST /transactions) Tj
+ET
+BT
+/F1 9 Tf
+45 406 Td
+(?) Tj
+ET
+BT
+/F1 9 Tf
+45 392 Td
+(Relay server \(localhost:3001\) ??? PQC FastAPI service \(localhost:8000\)) Tj
+ET
+BT
+/F1 9 Tf
+45 378 Td
+(? ? key generation / sign / verify) Tj
+ET
+BT
+/F1 9 Tf
+45 364 Td
+(? authorizeVerifiedPayment ?) Tj
+ET
+BT
+/F1 9 Tf
+45 350 Td
+(? verification result) Tj
+ET
+BT
+/F1 9 Tf
+45 336 Td
+(Hardhat local chain \(localhost:8545\)) Tj
+ET
+BT
+/F1 9 Tf
+45 322 Td
+(?) Tj
+ET
+BT
+/F1 9 Tf
+45 308 Td
+(? executeVerifiedPayment\(txId, ETH\)) Tj
+ET
+BT
+/F1 9 Tf
+45 294 Td
+(MetaMask wallet confirmation) Tj
+ET
+BT
+/F1 9 Tf
+45 280 Td
+(Key security idea: a relay may attest that a payment was PQC-verified, but it) Tj
+ET
+BT
+/F1 9 Tf
+45 266 Td
+(never holds or spends the user?s private wallet key. MetaMask signs and sends) Tj
+ET
+BT
+/F1 9 Tf
+45 252 Td
+(the final ETH payment from the user?s account.) Tj
+ET
+BT
+/F2 13 Tf
+45 238 Td
+(2. Main concepts in plain language) Tj
+ET
+BT
+/F2 10 Tf
+45 224 Td
+(Blockchain and smart contract) Tj
+ET
+BT
+/F1 9 Tf
+45 210 Td
+(A blockchain is a shared ledger of transactions. A smart contract is code) Tj
+ET
+BT
+/F1 9 Tf
+45 196 Td
+(stored on that ledger. In this project, TransactionRegistry.sol stores) Tj
+ET
+BT
+/F1 9 Tf
+45 182 Td
+(certificate and payment state, applies the transaction policy, and emits) Tj
+ET
+BT
+/F1 9 Tf
+45 168 Td
+(events that the frontend can display.) Tj
+ET
+BT
+/F2 10 Tf
+45 154 Td
+(Hardhat) Tj
+ET
+BT
+/F1 9 Tf
+45 140 Td
+(Hardhat is the Ethereum development environment used by this project. npm run) Tj
+ET
+BT
+/F1 9 Tf
+45 126 Td
+(node starts a local, temporary Ethereum network at http://127.0.0.1:8545, with) Tj
+ET
+BT
+/F1 9 Tf
+45 112 Td
+(chain ID 31337 and funded test accounts. Hardhat also compiles Solidity, runs) Tj
+ET
+BT
+/F1 9 Tf
+45 98 Td
+(tests, and deploys the contract. It is not a public blockchain: stopping the) Tj
+ET
+BT
+/F1 9 Tf
+45 84 Td
+(node normally removes its in-memory state.) Tj
+ET
+BT
+/F2 10 Tf
+45 70 Td
+(MetaMask and wallet) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 1 of 7) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 4908 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(MetaMask is a browser wallet. It holds the account that signs the final) Tj
+ET
+BT
+/F1 9 Tf
+45 770 Td
+(contract call. The project adds or switches MetaMask to ?Hardhat Local? \(chain) Tj
+ET
+BT
+/F1 9 Tf
+45 756 Td
+(ID 31337\), so MetaMask talks to the same local node as the app. The wallet) Tj
+ET
+BT
+/F1 9 Tf
+45 742 Td
+(address is public; the private key must never be put in frontend code or) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(shared.) Tj
+ET
+BT
+/F2 10 Tf
+45 714 Td
+(Uvicorn and FastAPI) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(FastAPI is the Python web framework used for the PQC backend. Uvicorn is the) Tj
+ET
+BT
+/F1 9 Tf
+45 686 Td
+(ASGI server that runs that FastAPI application. The command python3 -m uvicorn) Tj
+ET
+BT
+/F1 9 Tf
+45 672 Td
+(app.main:app --reload --port 8000 starts the API on port 8000 and restarts it) Tj
+ET
+BT
+/F1 9 Tf
+45 658 Td
+(when Python source changes.) Tj
+ET
+BT
+/F2 10 Tf
+45 644 Td
+(Epoch, delegation certificate, and PQC) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(An epoch is a time/key-rotation period. The system models a short-lived epoch) Tj
+ET
+BT
+/F1 9 Tf
+45 616 Td
+(subkey for frequent normal transactions and a long-lived master key for) Tj
+ET
+BT
+/F1 9 Tf
+45 602 Td
+(high-risk reinforcement. A delegation certificate binds an epoch to an owner) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(and expiry, so the contract can reject expired or revoked epochs without ever) Tj
+ET
+BT
+/F1 9 Tf
+45 574 Td
+(storing private key material.) Tj
+ET
+BT
+/F2 13 Tf
+45 560 Td
+(3. Repository map) Tj
+ET
+BT
+/F1 9 Tf
+45 546 Td
+(| Path | | Role |) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(| pqc/frontend/ | | Vite + React application. Connects MetaMask, submits) Tj
+ET
+BT
+/F1 9 Tf
+45 518 Td
+(transaction requests to the relay, makes the final wallet payment, and) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(displays contract event history. |) Tj
+ET
+BT
+/F1 9 Tf
+45 490 Td
+(| pqc/backend/ | | Python FastAPI PQC service. Owns the in-memory PQC keys and) Tj
+ET
+BT
+/F1 9 Tf
+45 476 Td
+(provides algorithm selection, signing, and verification APIs. |) Tj
+ET
+BT
+/F1 9 Tf
+45 462 Td
+(| contract-layer/contracts/ | | Solidity smart contract source. |) Tj
+ET
+BT
+/F1 9 Tf
+45 448 Td
+(| contract-layer/scripts/ | | Deployment and relay scripts. |) Tj
+ET
+BT
+/F1 9 Tf
+45 434 Td
+(| contract-layer/test/ | | Hardhat unit tests for threshold logic, roles,) Tj
+ET
+BT
+/F1 9 Tf
+45 420 Td
+(certificate checks, replay prevention, and verified ETH payment flow. |) Tj
+ET
+BT
+/F1 9 Tf
+45 406 Td
+(| contract-layer/mock-pqc-service/ | | Small compatibility service for a) Tj
+ET
+BT
+/F1 9 Tf
+45 392 Td
+(lightweight demo when the real PQC backend is unavailable. |) Tj
+ET
+BT
+/F2 13 Tf
+45 378 Td
+(4. End-to-end transaction flow) Tj
+ET
+BT
+/F1 9 Tf
+45 364 Td
+(- Connect wallet. The frontend calls connectWallet\(\), switches MetaMask to) Tj
+ET
+BT
+/F1 9 Tf
+45 350 Td
+(chain 31337, requests account access, and reads the local ETH balance.) Tj
+ET
+BT
+/F1 9 Tf
+45 336 Td
+(- Validate inputs. The user enters an externally owned recipient address and a) Tj
+ET
+BT
+/F1 9 Tf
+45 322 Td
+(positive amount. The frontend rejects recipient addresses that already contain) Tj
+ET
+BT
+/F1 9 Tf
+45 308 Td
+(contract bytecode; this demo sends ETH to wallet addresses only.) Tj
+ET
+BT
+/F1 9 Tf
+45 294 Td
+(- Ask the relay. The frontend POSTs sender, recipient, amount, and epoch 0 to) Tj
+ET
+BT
+/F1 9 Tf
+45 280 Td
+(http://127.0.0.1:3001/transactions.) Tj
+ET
+BT
+/F1 9 Tf
+45 266 Td
+(- Determine risk. The relay calls determineRequiredAuthLevel\(sender, amount\)) Tj
+ET
+BT
+/F1 9 Tf
+45 252 Td
+(on the contract. A normal payment gets SUBKEY_ONLY; a large or high) Tj
+ET
+BT
+/F1 9 Tf
+45 238 Td
+(rolling-volume payment gets MASTER_REINFORCED.) Tj
+ET
+BT
+/F1 9 Tf
+45 224 Td
+(- Generate a transaction ID. The relay hashes sender, recipient, wei amount,) Tj
+ET
+BT
+/F1 9 Tf
+45 210 Td
+(epoch, and current time into a unique txId.) Tj
+ET
+BT
+/F1 9 Tf
+45 196 Td
+(- Perform PQC verification. With the real backend, the relay creates a) Tj
+ET
+BT
+/F1 9 Tf
+45 182 Td
+(suitable key, signs the message, and verifies the signature through the) Tj
+ET
+BT
+/F1 9 Tf
+45 168 Td
+(FastAPI API. The algorithm is selected from the policy described later.) Tj
+ET
+BT
+/F1 9 Tf
+45 154 Td
+(- Authorize, but do not pay. The relay account calls authorizeVerifiedPayment.) Tj
+ET
+BT
+/F1 9 Tf
+45 140 Td
+(The contract checks the PQC result, valid certificate, required auth level,) Tj
+ET
+BT
+/F1 9 Tf
+45 126 Td
+(and replay state, then stores a pending payment.) Tj
+ET
+BT
+/F1 9 Tf
+45 112 Td
+(- MetaMask makes the final payment. The browser calls) Tj
+ET
+BT
+/F1 9 Tf
+45 98 Td
+(executeVerifiedPayment\(txId\) and attaches the exact ETH amount. The user) Tj
+ET
+BT
+/F1 9 Tf
+45 84 Td
+(approves this in MetaMask.) Tj
+ET
+BT
+/F1 9 Tf
+45 70 Td
+(- Contract transfers and records. The contract checks exact sender and amount,) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 2 of 7) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 4422 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(deletes the pending authorization, sends ETH to the recipient, records the) Tj
+ET
+BT
+/F1 9 Tf
+45 770 Td
+(transaction, updates the sender?s rolling volume, and emits) Tj
+ET
+BT
+/F1 9 Tf
+45 756 Td
+(TransactionRecorded.) Tj
+ET
+BT
+/F1 9 Tf
+45 742 Td
+(- Frontend refreshes. The UI waits for the receipt, refreshes its balance, and) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(adds the completed record to its list.) Tj
+ET
+BT
+/F1 9 Tf
+45 714 Td
+(Why two on-chain calls? The relay?s call only creates an authorization. The) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(user?s MetaMask call is a second transaction that moves ETH. This is) Tj
+ET
+BT
+/F1 9 Tf
+45 686 Td
+(intentional: the relay can validate security policy but cannot take custody of) Tj
+ET
+BT
+/F1 9 Tf
+45 672 Td
+(user funds.) Tj
+ET
+BT
+/F2 13 Tf
+45 658 Td
+(5. Frontend: important files) Tj
+ET
+BT
+/F2 10 Tf
+45 644 Td
+(pqc/frontend/src/App.jsx) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(This is the main React component. It holds form fields, wallet state,) Tj
+ET
+BT
+/F1 9 Tf
+45 616 Td
+(transaction status, errors, security status, and transaction history.) Tj
+ET
+BT
+/F1 9 Tf
+45 602 Td
+(- handleConnectWallet\(\) calls connectWallet, stores the selected address, and) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(retrieves ETH balance.) Tj
+ET
+BT
+/F1 9 Tf
+45 574 Td
+(- A React effect listens for MetaMask accountsChanged and chainChanged events,) Tj
+ET
+BT
+/F1 9 Tf
+45 560 Td
+(keeping the UI in sync.) Tj
+ET
+BT
+/F1 9 Tf
+45 546 Td
+(- Another effect validates chain ID 31337, checks that the configured address) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(actually has contract code, then reads TransactionRecorded events through) Tj
+ET
+BT
+/F1 9 Tf
+45 518 Td
+(queryFilter.) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(- handleTransaction\(\) performs client validation, calls the relay, then sends) Tj
+ET
+BT
+/F1 9 Tf
+45 490 Td
+(the exact executeVerifiedPayment\(bytes32\) calldata and value through the) Tj
+ET
+BT
+/F1 9 Tf
+45 476 Td
+(user?s signer.) Tj
+ET
+BT
+/F2 10 Tf
+45 462 Td
+(pqc/frontend/src/wallet.js) Tj
+ET
+BT
+/F1 9 Tf
+45 448 Td
+(This module contains the wallet connection logic. It uses the MetaMask) Tj
+ET
+BT
+/F1 9 Tf
+45 434 Td
+(provider exposed as window.ethereum. It first requests a switch to 0x7A69) Tj
+ET
+BT
+/F1 9 Tf
+45 420 Td
+(\(decimal 31337\). If Hardhat Local has not been added, error 4902 triggers) Tj
+ET
+BT
+/F1 9 Tf
+45 406 Td
+(wallet_addEthereumChain with RPC http://127.0.0.1:8545.) Tj
+ET
+BT
+/F2 10 Tf
+45 392 Td
+(pqc/frontend/src/contract.js) Tj
+ET
+BT
+/F1 9 Tf
+45 378 Td
+(This generated file exports CONTRACT_ADDRESS and CONTRACT_ABI. Do not edit it) Tj
+ET
+BT
+/F1 9 Tf
+45 364 Td
+(manually. contract-layer/scripts/deploy.js updates it after every local) Tj
+ET
+BT
+/F1 9 Tf
+45 350 Td
+(deployment so the browser calls the currently deployed contract.) Tj
+ET
+BT
+/F2 10 Tf
+45 336 Td
+(Other frontend files) Tj
+ET
+BT
+/F1 9 Tf
+45 322 Td
+(| File | | Purpose |) Tj
+ET
+BT
+/F1 9 Tf
+45 308 Td
+(| src/main.jsx | | React entry point that mounts the application. |) Tj
+ET
+BT
+/F1 9 Tf
+45 294 Td
+(| src/App.css and src/index.css | | Application styling and layout. |) Tj
+ET
+BT
+/F1 9 Tf
+45 280 Td
+(| vite.config.js | | Vite build/dev-server configuration. |) Tj
+ET
+BT
+/F1 9 Tf
+45 266 Td
+(| package.json | | Frontend dependencies and scripts such as npm run dev and) Tj
+ET
+BT
+/F1 9 Tf
+45 252 Td
+(npm run build. |) Tj
+ET
+BT
+/F2 13 Tf
+45 238 Td
+(6. PQC backend: important files) Tj
+ET
+BT
+/F2 10 Tf
+45 224 Td
+(pqc/backend/app/main.py) Tj
+ET
+BT
+/F1 9 Tf
+45 210 Td
+(This is the FastAPI application. It exposes:) Tj
+ET
+BT
+/F1 9 Tf
+45 196 Td
+(| Endpoint | | Purpose |) Tj
+ET
+BT
+/F1 9 Tf
+45 182 Td
+(| GET /health | | Reports service availability and supported algorithms. |) Tj
+ET
+BT
+/F1 9 Tf
+45 168 Td
+(| GET /algorithms | | Runs real benchmark cycles and returns measured sizes) Tj
+ET
+BT
+/F1 9 Tf
+45 154 Td
+(and timings. |) Tj
+ET
+BT
+/F1 9 Tf
+45 140 Td
+(| GET /escalation/policy | | Returns the complete algorithm-selection policy.) Tj
+ET
+BT
+/F1 9 Tf
+45 126 Td
+(|) Tj
+ET
+BT
+/F1 9 Tf
+45 112 Td
+(| POST /escalation/evaluate | | Explains which algorithm would be selected) Tj
+ET
+BT
+/F1 9 Tf
+45 98 Td
+(without creating a key. |) Tj
+ET
+BT
+/F1 9 Tf
+45 84 Td
+(| POST /keys/generate | | Generates and stores a key pair for a key role,) Tj
+ET
+BT
+/F1 9 Tf
+45 70 Td
+(epoch, threat level, and optional size preference. |) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 3 of 7) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 4575 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(| POST /sign | | Signs a Base64 message using a stored key ID. |) Tj
+ET
+BT
+/F1 9 Tf
+45 770 Td
+(| POST /verify | | Verifies a Base64 signature using a stored key or supplied) Tj
+ET
+BT
+/F1 9 Tf
+45 756 Td
+(public key. |) Tj
+ET
+BT
+/F2 10 Tf
+45 742 Td
+(pqc/backend/app/escalation.py) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(This is the adaptive security policy. It chooses algorithms based on key role,) Tj
+ET
+BT
+/F1 9 Tf
+45 714 Td
+(threat level \(0 normal, 1 elevated, 2 critical\), and size sensitivity.) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(| Key role | | Threat level 0 | | Threat level 1 | | Threat level 2 |) Tj
+ET
+BT
+/F1 9 Tf
+45 686 Td
+(| Epoch subkey \(normal\) | | ML-DSA-44 | | ML-DSA-65 | | ML-DSA-87 |) Tj
+ET
+BT
+/F1 9 Tf
+45 672 Td
+(| Epoch subkey \(size-sensitive\) | | Falcon-512 | | Falcon-512 | | Falcon-1024) Tj
+ET
+BT
+/F1 9 Tf
+45 658 Td
+(|) Tj
+ET
+BT
+/F1 9 Tf
+45 644 Td
+(| Master key | | SLH-DSA-SHAKE-128s | | SLH-DSA-SHAKE-192s | |) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(SLH-DSA-SHAKE-256s |) Tj
+ET
+BT
+/F1 9 Tf
+45 616 Td
+(The design deliberately uses different cryptographic assumptions. Frequently) Tj
+ET
+BT
+/F1 9 Tf
+45 602 Td
+(used epoch keys use fast lattice-based schemes \(ML-DSA or Falcon\). The) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(root/master key uses hash-based SLH-DSA, so a weakness in the lattice family) Tj
+ET
+BT
+/F1 9 Tf
+45 574 Td
+(would not automatically compromise the root of trust.) Tj
+ET
+BT
+/F2 10 Tf
+45 560 Td
+(pqc/backend/app/algorithms.py) Tj
+ET
+BT
+/F1 9 Tf
+45 546 Td
+(This is the adapter around cryptographic libraries. liboqs-python supplies) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(ML-DSA and Falcon; pyspx supplies SLH-DSA. The rest of the project calls a) Tj
+ET
+BT
+/F1 9 Tf
+45 518 Td
+(common API-generate key pair, sign, and verify-without needing to know the) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(underlying library differences. It also supplies benchmarking code used by) Tj
+ET
+BT
+/F1 9 Tf
+45 490 Td
+(/algorithms.) Tj
+ET
+BT
+/F2 10 Tf
+45 476 Td
+(pqc/backend/app/keystore.py) Tj
+ET
+BT
+/F1 9 Tf
+45 462 Td
+(This is a thread-safe in-memory key store for the demonstration. It stores) Tj
+ET
+BT
+/F1 9 Tf
+45 448 Td
+(private keys only inside the backend process and returns a key ID plus public) Tj
+ET
+BT
+/F1 9 Tf
+45 434 Td
+(information to API clients. It is intentionally not production persistence; a) Tj
+ET
+BT
+/F1 9 Tf
+45 420 Td
+(real system would replace it with a protected KMS, HSM, or database-backed) Tj
+ET
+BT
+/F1 9 Tf
+45 406 Td
+(design.) Tj
+ET
+BT
+/F2 10 Tf
+45 392 Td
+(pqc/backend/app/models.py) Tj
+ET
+BT
+/F1 9 Tf
+45 378 Td
+(Pydantic request and response schemas. They define the HTTP contract and) Tj
+ET
+BT
+/F1 9 Tf
+45 364 Td
+(validate fields such as key_role, epoch, threat_level, Base64 messages,) Tj
+ET
+BT
+/F1 9 Tf
+45 350 Td
+(signatures, and key identifiers.) Tj
+ET
+BT
+/F2 10 Tf
+45 336 Td
+(Backend support files) Tj
+ET
+BT
+/F1 9 Tf
+45 322 Td
+(- requirements.txt: Python dependencies: FastAPI, Uvicorn, Pydantic, liboqs) Tj
+ET
+BT
+/F1 9 Tf
+45 308 Td
+(bindings, pyspx, pytest, and HTTP test client.) Tj
+ET
+BT
+/F1 9 Tf
+45 294 Td
+(- tests/test_service.py: backend tests for algorithm paths, escalation) Tj
+ET
+BT
+/F1 9 Tf
+45 280 Td
+(decisions, HTTP endpoints, and key flows.) Tj
+ET
+BT
+/F1 9 Tf
+45 266 Td
+(- rust_bench/: Rust/PQClean-based benchmarking and a cross-check tool that) Tj
+ET
+BT
+/F1 9 Tf
+45 252 Td
+(compares measured properties with the live Python API.) Tj
+ET
+BT
+/F2 13 Tf
+45 238 Td
+(7. Smart contract: TransactionRegistry.sol) Tj
+ET
+BT
+/F1 9 Tf
+45 224 Td
+(The contract is the on-chain policy and audit layer. It inherits OpenZeppelin) Tj
+ET
+BT
+/F1 9 Tf
+45 210 Td
+(AccessControl for permissions and Pausable for emergency stopping.) Tj
+ET
+BT
+/F2 10 Tf
+45 196 Td
+(Roles) Tj
+ET
+BT
+/F1 9 Tf
+45 182 Td
+(| Role | | Who has it in the local demo | | What it can do |) Tj
+ET
+BT
+/F1 9 Tf
+45 168 Td
+(| DEFAULT_ADMIN_ROLE | | Hardhat deployer account | | Change thresholds;) Tj
+ET
+BT
+/F1 9 Tf
+45 154 Td
+(pause/unpause; administer roles. |) Tj
+ET
+BT
+/F1 9 Tf
+45 140 Td
+(| KEY_MANAGER_ROLE | | Hardhat deployer account | | Register delegation) Tj
+ET
+BT
+/F1 9 Tf
+45 126 Td
+(certificates and revoke epochs. |) Tj
+ET
+BT
+/F1 9 Tf
+45 112 Td
+(| RELAYER_ROLE | | Hardhat account #1 / relay | | Authorize verified payments) Tj
+ET
+BT
+/F1 9 Tf
+45 98 Td
+(and submit verification records. |) Tj
+ET
+BT
+/F2 10 Tf
+45 84 Td
+(Stored records) Tj
+ET
+BT
+/F1 9 Tf
+45 70 Td
+(- DelegationCert: epoch, subkey owner, issue/expiry times, master-key ID hash,) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 4 of 7) Tj
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 4734 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(and existence flag.) Tj
+ET
+BT
+/F1 9 Tf
+45 770 Td
+(- PendingPayment: exact authorized sender, recipient, amount, epoch, and) Tj
+ET
+BT
+/F1 9 Tf
+45 756 Td
+(authentication level. It exists only until the wallet completes payment.) Tj
+ET
+BT
+/F1 9 Tf
+45 742 Td
+(- TxRecord: immutable completed transaction details: ID, sender, recipient,) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(amount, epoch, auth level, verification flag, and timestamp.) Tj
+ET
+BT
+/F1 9 Tf
+45 714 Td
+(- VolumeWindow: tracks a sender?s amount within the rolling window for) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(high-risk escalation.) Tj
+ET
+BT
+/F2 10 Tf
+45 686 Td
+(Risk thresholds) Tj
+ET
+BT
+/F1 9 Tf
+45 672 Td
+(Default values are 1 ether for a single-payment value threshold, 5 ether for) Tj
+ET
+BT
+/F1 9 Tf
+45 658 Td
+(rolling volume, and a 1 day rolling window. determineRequiredAuthLevel returns) Tj
+ET
+BT
+/F1 9 Tf
+45 644 Td
+(MASTER_REINFORCED if either the single amount or projected rolling volume) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(exceeds its threshold. Otherwise it returns SUBKEY_ONLY.) Tj
+ET
+BT
+/F2 10 Tf
+45 616 Td
+(Payment functions) Tj
+ET
+BT
+/F1 9 Tf
+45 602 Td
+(| Function | | Caller | | What it does |) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(| authorizeVerifiedPayment\(...\) | | Relay only | | Checks PQC result,) Tj
+ET
+BT
+/F1 9 Tf
+45 574 Td
+(certificate existence/expiry/revocation, threshold auth level, replay state,) Tj
+ET
+BT
+/F1 9 Tf
+45 560 Td
+(then stores a pending exact payment. |) Tj
+ET
+BT
+/F1 9 Tf
+45 546 Td
+(| executeVerifiedPayment\(txId\) | | The authorized MetaMask wallet | | Requires) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(pending payment, exact sender, exact ETH value, and valid epoch. Deletes) Tj
+ET
+BT
+/F1 9 Tf
+45 518 Td
+(authorization before transfer, records transaction, updates volume, then sends) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(ETH to recipient. |) Tj
+ET
+BT
+/F1 9 Tf
+45 490 Td
+(| submitVerifiedTransaction\(...\) | | Relay only | | Alternate record-only) Tj
+ET
+BT
+/F1 9 Tf
+45 476 Td
+(flow: records an already-verified transaction without moving ETH. |) Tj
+ET
+BT
+/F2 10 Tf
+45 462 Td
+(Important safety checks) Tj
+ET
+BT
+/F1 9 Tf
+45 448 Td
+(- Replay protection: txIdUsed rejects duplicate transaction IDs.) Tj
+ET
+BT
+/F1 9 Tf
+45 434 Td
+(- Exact-payment protection: MetaMask must send the same sender and wei amount) Tj
+ET
+BT
+/F1 9 Tf
+45 420 Td
+(stored by the relay.) Tj
+ET
+BT
+/F1 9 Tf
+45 406 Td
+(- Certificate checks: missing, expired, and revoked epochs are rejected.) Tj
+ET
+BT
+/F1 9 Tf
+45 392 Td
+(- Role checks: only the relay can authorize; only the key manager can) Tj
+ET
+BT
+/F1 9 Tf
+45 378 Td
+(register/revoke certificates.) Tj
+ET
+BT
+/F1 9 Tf
+45 364 Td
+(- Pause: admin can stop state-changing payment and authorization functions.) Tj
+ET
+BT
+/F1 9 Tf
+45 350 Td
+(- Checks-effects-interactions: the pending authorization is removed and state) Tj
+ET
+BT
+/F1 9 Tf
+45 336 Td
+(recorded before the external ETH transfer, reducing re-entrancy risk.) Tj
+ET
+BT
+/F2 13 Tf
+45 322 Td
+(8. Deployment, relay, and tests) Tj
+ET
+BT
+/F2 10 Tf
+45 308 Td
+(contract-layer/hardhat.config.js) Tj
+ET
+BT
+/F1 9 Tf
+45 294 Td
+(Configures Solidity 0.8.24, enables the optimizer, and defines the localhost) Tj
+ET
+BT
+/F1 9 Tf
+45 280 Td
+(network at port 8545 with chain ID 31337.) Tj
+ET
+BT
+/F2 10 Tf
+45 266 Td
+(contract-layer/scripts/deploy.js) Tj
+ET
+BT
+/F1 9 Tf
+45 252 Td
+(Deploys TransactionRegistry with Hardhat account #0 as admin/key manager and) Tj
+ET
+BT
+/F1 9 Tf
+45 238 Td
+(account #1 as relay. It writes deployments/localhost.json for inter-layer use,) Tj
+ET
+BT
+/F1 9 Tf
+45 224 Td
+(regenerates the frontend?s src/contract.js, and registers an epoch 0) Tj
+ET
+BT
+/F1 9 Tf
+45 210 Td
+(delegation certificate valid for one week. This regeneration is why deployment) Tj
+ET
+BT
+/F1 9 Tf
+45 196 Td
+(must be run after starting a fresh local chain.) Tj
+ET
+BT
+/F2 10 Tf
+45 182 Td
+(contract-layer/scripts/relay-server.js) Tj
+ET
+BT
+/F1 9 Tf
+45 168 Td
+(This is the browser-facing local HTTP relay. It listens on port 3001 and) Tj
+ET
+BT
+/F1 9 Tf
+45 154 Td
+(accepts only allowed local Vite origins. It constructs the message) Tj
+ET
+BT
+/F1 9 Tf
+45 140 Td
+(sender->recipient:amountWei, obtains PQC verification, and invokes) Tj
+ET
+BT
+/F1 9 Tf
+45 126 Td
+(authorizeVerifiedPayment. When PQC_SERVICE_URL ends in port 8001 it uses the) Tj
+ET
+BT
+/F1 9 Tf
+45 112 Td
+(mock service format; otherwise it performs the real backend?s key-generation,) Tj
+ET
+BT
+/F1 9 Tf
+45 98 Td
+(signing, and verification sequence.) Tj
+ET
+BT
+/F2 10 Tf
+45 84 Td
+(contract-layer/scripts/relay.js) Tj
+ET
+BT
+/F1 9 Tf
+45 70 Td
+(A command-line demonstration relay. It exercises normal, high-risk, and) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 5 of 7) Tj
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 4564 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(deliberately invalid verification paths without the browser UI.) Tj
+ET
+BT
+/F2 10 Tf
+45 770 Td
+(contract-layer/test/TransactionRegistry.test.js) Tj
+ET
+BT
+/F1 9 Tf
+45 756 Td
+(Hardhat/Mocha tests covering thresholds, certificates, revocation,) Tj
+ET
+BT
+/F1 9 Tf
+45 742 Td
+(authorization, duplicate IDs, authentication-level escalation, transaction) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(records, and ETH payment behavior. Run them with npm test from contract-layer.) Tj
+ET
+BT
+/F2 13 Tf
+45 714 Td
+(9. How to run the complete application) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(Open separate terminals. Keep the services running while using the demo.) Tj
+ET
+BT
+/F2 10 Tf
+45 686 Td
+(Terminal 1 - local Ethereum network) Tj
+ET
+BT
+/F1 9 Tf
+45 672 Td
+(cd quantum-resistant-blockchain-security-model/contract-layer) Tj
+ET
+BT
+/F1 9 Tf
+45 658 Td
+(npm run node) Tj
+ET
+BT
+/F2 10 Tf
+45 644 Td
+(Terminal 2 - compile/deploy contract) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(cd quantum-resistant-blockchain-security-model/contract-layer) Tj
+ET
+BT
+/F1 9 Tf
+45 616 Td
+(npm run deploy:local) Tj
+ET
+BT
+/F2 10 Tf
+45 602 Td
+(Terminal 3 - PQC FastAPI backend) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(cd quantum-resistant-blockchain-security-model/pqc/backend) Tj
+ET
+BT
+/F1 9 Tf
+45 574 Td
+(source .venv/bin/activate) Tj
+ET
+BT
+/F1 9 Tf
+45 560 Td
+(python3 -m uvicorn app.main:app --reload --port 8000) Tj
+ET
+BT
+/F2 10 Tf
+45 546 Td
+(Terminal 4 - relay) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(cd quantum-resistant-blockchain-security-model/contract-layer) Tj
+ET
+BT
+/F2 18 Tf
+45 518 Td
+(Ensure .env contains: PQC_SERVICE_URL=http://127.0.0.1:8000) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(npm run relay:server) Tj
+ET
+BT
+/F2 10 Tf
+45 490 Td
+(Terminal 5 - React app) Tj
+ET
+BT
+/F1 9 Tf
+45 476 Td
+(cd quantum-resistant-blockchain-security-model/pqc/frontend) Tj
+ET
+BT
+/F1 9 Tf
+45 462 Td
+(npm run dev) Tj
+ET
+BT
+/F1 9 Tf
+45 448 Td
+(Open the Vite URL \(usually http://localhost:5173\). Connect MetaMask, allow it) Tj
+ET
+BT
+/F1 9 Tf
+45 434 Td
+(to switch to Hardhat Local, and use a funded Hardhat test account. Submit) Tj
+ET
+BT
+/F1 9 Tf
+45 420 Td
+(payments from the application form-not by using MetaMask?s separate Send) Tj
+ET
+BT
+/F1 9 Tf
+45 406 Td
+(button to transfer directly to the contract.) Tj
+ET
+BT
+/F1 9 Tf
+45 392 Td
+(Local-only warning: Hardhat accounts, the in-memory PQC keystore, local relay,) Tj
+ET
+BT
+/F1 9 Tf
+45 378 Td
+(and default configuration are for development/demo use. Do not use local test) Tj
+ET
+BT
+/F1 9 Tf
+45 364 Td
+(keys, an in-memory key store, or localhost CORS rules for a real-money) Tj
+ET
+BT
+/F1 9 Tf
+45 350 Td
+(deployment.) Tj
+ET
+BT
+/F2 13 Tf
+45 336 Td
+(10. Common troubleshooting) Tj
+ET
+BT
+/F1 9 Tf
+45 322 Td
+(| Symptom | | Likely cause and fix |) Tj
+ET
+BT
+/F1 9 Tf
+45 308 Td
+(| Frontend says the contract is not deployed | | Start Hardhat node, then run) Tj
+ET
+BT
+/F1 9 Tf
+45 294 Td
+(npm run deploy:local. Confirm MetaMask and the frontend use chain ID 31337. |) Tj
+ET
+BT
+/F1 9 Tf
+45 280 Td
+(| Relay cannot reach PQC service | | Start Uvicorn on port 8000 and set) Tj
+ET
+BT
+/F1 9 Tf
+45 266 Td
+(PQC_SERVICE_URL=http://127.0.0.1:8000 before starting the relay. |) Tj
+ET
+BT
+/F1 9 Tf
+45 252 Td
+(| MetaMask has no ETH | | Import a Hardhat test account into MetaMask after) Tj
+ET
+BT
+/F1 9 Tf
+45 238 Td
+(starting the node. These are local test funds only. |) Tj
+ET
+BT
+/F1 9 Tf
+45 224 Td
+(| PaymentNotAuthorized | | The relay did not create a pending authorization) Tj
+ET
+BT
+/F1 9 Tf
+45 210 Td
+(for this ID, or it was already consumed. Submit a fresh form request. |) Tj
+ET
+BT
+/F1 9 Tf
+45 196 Td
+(| PaymentSenderMismatch | | The MetaMask account changed after the relay) Tj
+ET
+BT
+/F1 9 Tf
+45 182 Td
+(authorized another sender. Reconnect the original account and retry. |) Tj
+ET
+BT
+/F1 9 Tf
+45 168 Td
+(| IncorrectPaymentAmount | | The value attached by the wallet differs from the) Tj
+ET
+BT
+/F1 9 Tf
+45 154 Td
+(relay authorization. Submit a fresh transaction; do not edit the value in) Tj
+ET
+BT
+/F1 9 Tf
+45 140 Td
+(MetaMask. |) Tj
+ET
+BT
+/F1 9 Tf
+45 126 Td
+(| Certificate expired/revoked/missing | | Redeploy locally to seed epoch 0) Tj
+ET
+BT
+/F1 9 Tf
+45 112 Td
+(again, or have a key manager register a valid certificate for the relevant) Tj
+ET
+BT
+/F1 9 Tf
+45 98 Td
+(epoch. |) Tj
+ET
+BT
+/F1 9 Tf
+45 84 Td
+(| MetaMask activity/nonce state is stale on the local chain | | For this) Tj
+ET
+BT
+/F1 9 Tf
+45 70 Td
+(development network only, MetaMask Settings -> Developer tools -> Delete) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 6 of 7) Tj
+ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 18 0 R >>
+endobj
+18 0 obj
+<< /Length 2228 >>
+stream
+BT
+/F1 9 Tf
+45 812 Td
+(Quantum-Resistant Blockchain Security Model - Project Guide) Tj
+ET
+BT
+/F1 9 Tf
+45 784 Td
+(activity and nonce data can clear local cached activity. It does not remove) Tj
+ET
+BT
+/F1 9 Tf
+45 770 Td
+(funds or the deployed contract. |) Tj
+ET
+BT
+/F2 13 Tf
+45 756 Td
+(11. Production considerations) Tj
+ET
+BT
+/F1 9 Tf
+45 742 Td
+(- Use a real key management system, durable encrypted storage, access logging,) Tj
+ET
+BT
+/F1 9 Tf
+45 728 Td
+(key rotation, and backup/recovery procedures instead of the in-memory store.) Tj
+ET
+BT
+/F1 9 Tf
+45 714 Td
+(- Authenticate and authorize relay requests; do not expose a localhost-style) Tj
+ET
+BT
+/F1 9 Tf
+45 700 Td
+(open relay to an untrusted network.) Tj
+ET
+BT
+/F1 9 Tf
+45 686 Td
+(- Use HTTPS, strict CORS, rate limiting, monitoring, and structured audit) Tj
+ET
+BT
+/F1 9 Tf
+45 672 Td
+(logs.) Tj
+ET
+BT
+/F1 9 Tf
+45 658 Td
+(- Audit the Solidity contract before deploying to a public network and use) Tj
+ET
+BT
+/F1 9 Tf
+45 644 Td
+(multisig/timelocked administration for sensitive roles.) Tj
+ET
+BT
+/F1 9 Tf
+45 630 Td
+(- Define a robust certificate issuance/revocation protocol and a canonical) Tj
+ET
+BT
+/F1 9 Tf
+45 616 Td
+(message/transaction-ID format shared by all services.) Tj
+ET
+BT
+/F1 9 Tf
+45 602 Td
+(- Use a persistent deployment registry and environment-specific addresses;) Tj
+ET
+BT
+/F1 9 Tf
+45 588 Td
+(local Hardhat deployments disappear when the node stops.) Tj
+ET
+BT
+/F2 13 Tf
+45 574 Td
+(12. Summary) Tj
+ET
+BT
+/F1 9 Tf
+45 560 Td
+(The project combines a normal wallet payment experience with an adaptive PQC) Tj
+ET
+BT
+/F1 9 Tf
+45 546 Td
+(gate. The PQC service selects cryptographic strength according to risk and key) Tj
+ET
+BT
+/F1 9 Tf
+45 532 Td
+(role; the relay conveys a verified authorization without gaining access to) Tj
+ET
+BT
+/F1 9 Tf
+45 518 Td
+(ETH; MetaMask preserves user control of the final payment; and the contract) Tj
+ET
+BT
+/F1 9 Tf
+45 504 Td
+(enforces exact authorization, certificate validity, escalation thresholds,) Tj
+ET
+BT
+/F1 9 Tf
+45 490 Td
+(replay protection, and an immutable on-chain record.) Tj
+ET
+BT
+/F1 9 Tf
+45 476 Td
+(Generated from the repository?s current source structure and implementation.) Tj
+ET
+BT
+/F1 8 Tf
+500 28 Td
+(Page 7 of 7) Tj
+ET
+endstream
+endobj
+xref
+0 19
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000161 00000 n 
+0000000231 00000 n 
+0000000306 00000 n 
+0000000442 00000 n 
+0000004911 00000 n 
+0000005047 00000 n 
+0000010007 00000 n 
+0000010144 00000 n 
+0000014619 00000 n 
+0000014757 00000 n 
+0000019385 00000 n 
+0000019523 00000 n 
+0000024310 00000 n 
+0000024448 00000 n 
+0000029065 00000 n 
+0000029203 00000 n 
+trailer
+<< /Size 19 /Root 1 0 R >>
+startxref
+31484
+%%EOF

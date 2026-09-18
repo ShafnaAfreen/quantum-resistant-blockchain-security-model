@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quantum-Resistant Blockchain Security Model — Project Guide</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font: 10.5pt/1.48 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; color:#172033; }
+  h1,h2,h3 { color:#152a59; line-height:1.18; } h1 { font-size:29pt; margin:0 0 10px; } h2 { font-size:18pt; border-bottom:2px solid #8ba8eb; padding-bottom:5px; margin-top:30px; } h3 { font-size:13pt; margin:20px 0 6px; }
+  p { margin:7px 0; } .cover { min-height:235mm; display:flex; flex-direction:column; justify-content:center; } .tag { color:#315fc1; font-weight:700; letter-spacing:.08em; text-transform:uppercase; } .subtitle { font-size:15pt; color:#52627f; max-width:620px; } .meta { margin-top:36px; color:#52627f; }
+  .pagebreak { break-before:page; } .callout { border-left:4px solid #3867d6; background:#f1f5ff; padding:10px 13px; margin:14px 0; } .warning { border-left-color:#c97619; background:#fff7e9; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 16px; font-size:9.3pt; } th { background:#eaf0ff; color:#152a59; } th,td { border:1px solid #cbd6ef; padding:7px; vertical-align:top; text-align:left; }
+  code { font:8.8pt/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:#f1f3f7; padding:1px 3px; } pre { background:#111c33; color:#edf3ff; padding:12px; white-space:pre-wrap; border-radius:4px; font:8.7pt/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  ul,ol { margin:7px 0 10px; padding-left:22px; } li { margin:3px 0; } .diagram { font:9pt/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap; background:#f5f7fb; border:1px solid #d5deef; padding:13px; }
+  .small { font-size:9pt; color:#52627f; } .role { font-weight:700; color:#315fc1; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="tag">Technical project documentation</div>
+  <h1>Quantum-Resistant Blockchain Security Model</h1>
+  <p class="subtitle">A practical guide to the post-quantum transaction demo: React wallet UI, MetaMask, Hardhat, PQC verification service, relay, and Solidity registry.</p>
+  <div class="meta">
+    <p><strong>Repository:</strong> <code>quantum-resistant-blockchain-security-model</code></p>
+    <p><strong>Purpose:</strong> explain how the project works, how to run it locally, and where the important logic lives.</p>
+  </div>
+</section>
+
+<section class="pagebreak">
+<h2>1. What this project demonstrates</h2>
+<p>This project is a local Ethereum-style payment demo with an additional post-quantum cryptography (PQC) verification step. A user enters a recipient and ETH amount in a React application. Before the user’s wallet is allowed to make the payment, an off-chain relay obtains a PQC signature verification result. The Solidity contract then records the authorized payment and transfers the ETH only when the same wallet confirms it through MetaMask.</p>
+<p>The design separates responsibilities deliberately:</p>
+<ul>
+  <li><span class="role">Browser / React UI:</span> collects the transaction details and asks the user’s MetaMask wallet to approve the final payment.</li>
+  <li><span class="role">PQC backend:</span> chooses a PQC algorithm, creates keys, signs, and verifies off-chain.</li>
+  <li><span class="role">Relay:</span> bridges the browser, PQC HTTP service, and blockchain. It has authority to authorize a payment, but cannot spend the user’s ETH.</li>
+  <li><span class="role">Smart contract:</span> independently checks authorization, epoch certificate status, thresholds, and the exact sender/amount before transferring ETH and recording an immutable event.</li>
+</ul>
+
+<div class="diagram">React form (localhost:5173)
+        │ POST /transactions
+        ▼
+Relay server (localhost:3001) ──► PQC FastAPI service (localhost:8000)
+        │                             │ key generation / sign / verify
+        │ authorizeVerifiedPayment     ▼
+        ▼                         verification result
+Hardhat local chain (localhost:8545)
+        ▲
+        │ executeVerifiedPayment(txId, ETH)
+MetaMask wallet confirmation</div>
+
+<div class="callout"><strong>Key security idea:</strong> a relay may attest that a payment was PQC-verified, but it never holds or spends the user’s private wallet key. MetaMask signs and sends the final ETH payment from the user’s account.</div>
+
+<h2>2. Main concepts in plain language</h2>
+<h3>Blockchain and smart contract</h3>
+<p>A blockchain is a shared ledger of transactions. A smart contract is code stored on that ledger. In this project, <code>TransactionRegistry.sol</code> stores certificate and payment state, applies the transaction policy, and emits events that the frontend can display.</p>
+
+<h3>Hardhat</h3>
+<p>Hardhat is the Ethereum development environment used by this project. <code>npm run node</code> starts a local, temporary Ethereum network at <code>http://127.0.0.1:8545</code>, with chain ID <code>31337</code> and funded test accounts. Hardhat also compiles Solidity, runs tests, and deploys the contract. It is not a public blockchain: stopping the node normally removes its in-memory state.</p>
+
+<h3>MetaMask and wallet</h3>
+<p>MetaMask is a browser wallet. It holds the account that signs the final contract call. The project adds or switches MetaMask to “Hardhat Local” (chain ID 31337), so MetaMask talks to the same local node as the app. The wallet address is public; the private key must never be put in frontend code or shared.</p>
+
+<h3>Uvicorn and FastAPI</h3>
+<p>FastAPI is the Python web framework used for the PQC backend. Uvicorn is the ASGI server that runs that FastAPI application. The command <code>python3 -m uvicorn app.main:app --reload --port 8000</code> starts the API on port 8000 and restarts it when Python source changes.</p>
+
+<h3>Epoch, delegation certificate, and PQC</h3>
+<p>An epoch is a time/key-rotation period. The system models a short-lived epoch subkey for frequent normal transactions and a long-lived master key for high-risk reinforcement. A delegation certificate binds an epoch to an owner and expiry, so the contract can reject expired or revoked epochs without ever storing private key material.</p>
+
+<h2>3. Repository map</h2>
+<table>
+<tr><th>Path</th><th>Role</th></tr>
+<tr><td><code>pqc/frontend/</code></td><td>Vite + React application. Connects MetaMask, submits transaction requests to the relay, makes the final wallet payment, and displays contract event history.</td></tr>
+<tr><td><code>pqc/backend/</code></td><td>Python FastAPI PQC service. Owns the in-memory PQC keys and provides algorithm selection, signing, and verification APIs.</td></tr>
+<tr><td><code>contract-layer/contracts/</code></td><td>Solidity smart contract source.</td></tr>
+<tr><td><code>contract-layer/scripts/</code></td><td>Deployment and relay scripts.</td></tr>
+<tr><td><code>contract-layer/test/</code></td><td>Hardhat unit tests for threshold logic, roles, certificate checks, replay prevention, and verified ETH payment flow.</td></tr>
+<tr><td><code>contract-layer/mock-pqc-service/</code></td><td>Small compatibility service for a lightweight demo when the real PQC backend is unavailable.</td></tr>
+</table>
+</section>
+
+<section class="pagebreak">
+<h2>4. End-to-end transaction flow</h2>
+<ol>
+  <li><strong>Connect wallet.</strong> The frontend calls <code>connectWallet()</code>, switches MetaMask to chain 31337, requests account access, and reads the local ETH balance.</li>
+  <li><strong>Validate inputs.</strong> The user enters an externally owned recipient address and a positive amount. The frontend rejects recipient addresses that already contain contract bytecode; this demo sends ETH to wallet addresses only.</li>
+  <li><strong>Ask the relay.</strong> The frontend POSTs sender, recipient, amount, and epoch 0 to <code>http://127.0.0.1:3001/transactions</code>.</li>
+  <li><strong>Determine risk.</strong> The relay calls <code>determineRequiredAuthLevel(sender, amount)</code> on the contract. A normal payment gets <code>SUBKEY_ONLY</code>; a large or high rolling-volume payment gets <code>MASTER_REINFORCED</code>.</li>
+  <li><strong>Generate a transaction ID.</strong> The relay hashes sender, recipient, wei amount, epoch, and current time into a unique <code>txId</code>.</li>
+  <li><strong>Perform PQC verification.</strong> With the real backend, the relay creates a suitable key, signs the message, and verifies the signature through the FastAPI API. The algorithm is selected from the policy described later.</li>
+  <li><strong>Authorize, but do not pay.</strong> The relay account calls <code>authorizeVerifiedPayment</code>. The contract checks the PQC result, valid certificate, required auth level, and replay state, then stores a pending payment.</li>
+  <li><strong>MetaMask makes the final payment.</strong> The browser calls <code>executeVerifiedPayment(txId)</code> and attaches the exact ETH amount. The user approves this in MetaMask.</li>
+  <li><strong>Contract transfers and records.</strong> The contract checks exact sender and amount, deletes the pending authorization, sends ETH to the recipient, records the transaction, updates the sender’s rolling volume, and emits <code>TransactionRecorded</code>.</li>
+  <li><strong>Frontend refreshes.</strong> The UI waits for the receipt, refreshes its balance, and adds the completed record to its list.</li>
+</ol>
+
+<div class="callout warning"><strong>Why two on-chain calls?</strong> The relay’s call only creates an authorization. The user’s MetaMask call is a second transaction that moves ETH. This is intentional: the relay can validate security policy but cannot take custody of user funds.</div>
+
+<h2>5. Frontend: important files</h2>
+<h3><code>pqc/frontend/src/App.jsx</code></h3>
+<p>This is the main React component. It holds form fields, wallet state, transaction status, errors, security status, and transaction history.</p>
+<ul>
+  <li><code>handleConnectWallet()</code> calls <code>connectWallet</code>, stores the selected address, and retrieves ETH balance.</li>
+  <li>A React effect listens for MetaMask <code>accountsChanged</code> and <code>chainChanged</code> events, keeping the UI in sync.</li>
+  <li>Another effect validates chain ID 31337, checks that the configured address actually has contract code, then reads <code>TransactionRecorded</code> events through <code>queryFilter</code>.</li>
+  <li><code>handleTransaction()</code> performs client validation, calls the relay, then sends the exact <code>executeVerifiedPayment(bytes32)</code> calldata and value through the user’s signer.</li>
+</ul>
+
+<h3><code>pqc/frontend/src/wallet.js</code></h3>
+<p>This module contains the wallet connection logic. It uses the MetaMask provider exposed as <code>window.ethereum</code>. It first requests a switch to <code>0x7A69</code> (decimal 31337). If Hardhat Local has not been added, error 4902 triggers <code>wallet_addEthereumChain</code> with RPC <code>http://127.0.0.1:8545</code>.</p>
+
+<h3><code>pqc/frontend/src/contract.js</code></h3>
+<p>This generated file exports <code>CONTRACT_ADDRESS</code> and <code>CONTRACT_ABI</code>. Do not edit it manually. <code>contract-layer/scripts/deploy.js</code> updates it after every local deployment so the browser calls the currently deployed contract.</p>
+
+<h3>Other frontend files</h3>
+<table>
+<tr><th>File</th><th>Purpose</th></tr>
+<tr><td><code>src/main.jsx</code></td><td>React entry point that mounts the application.</td></tr>
+<tr><td><code>src/App.css</code> and <code>src/index.css</code></td><td>Application styling and layout.</td></tr>
+<tr><td><code>vite.config.js</code></td><td>Vite build/dev-server configuration.</td></tr>
+<tr><td><code>package.json</code></td><td>Frontend dependencies and scripts such as <code>npm run dev</code> and <code>npm run build</code>.</td></tr>
+</table>
+</section>
+
+<section class="pagebreak">
+<h2>6. PQC backend: important files</h2>
+<h3><code>pqc/backend/app/main.py</code></h3>
+<p>This is the FastAPI application. It exposes:</p>
+<table>
+<tr><th>Endpoint</th><th>Purpose</th></tr>
+<tr><td><code>GET /health</code></td><td>Reports service availability and supported algorithms.</td></tr>
+<tr><td><code>GET /algorithms</code></td><td>Runs real benchmark cycles and returns measured sizes and timings.</td></tr>
+<tr><td><code>GET /escalation/policy</code></td><td>Returns the complete algorithm-selection policy.</td></tr>
+<tr><td><code>POST /escalation/evaluate</code></td><td>Explains which algorithm would be selected without creating a key.</td></tr>
+<tr><td><code>POST /keys/generate</code></td><td>Generates and stores a key pair for a key role, epoch, threat level, and optional size preference.</td></tr>
+<tr><td><code>POST /sign</code></td><td>Signs a Base64 message using a stored key ID.</td></tr>
+<tr><td><code>POST /verify</code></td><td>Verifies a Base64 signature using a stored key or supplied public key.</td></tr>
+</table>
+
+<h3><code>pqc/backend/app/escalation.py</code></h3>
+<p>This is the adaptive security policy. It chooses algorithms based on key role, threat level (0 normal, 1 elevated, 2 critical), and size sensitivity.</p>
+<table>
+<tr><th>Key role</th><th>Threat level 0</th><th>Threat level 1</th><th>Threat level 2</th></tr>
+<tr><td>Epoch subkey (normal)</td><td>ML-DSA-44</td><td>ML-DSA-65</td><td>ML-DSA-87</td></tr>
+<tr><td>Epoch subkey (size-sensitive)</td><td>Falcon-512</td><td>Falcon-512</td><td>Falcon-1024</td></tr>
+<tr><td>Master key</td><td>SLH-DSA-SHAKE-128s</td><td>SLH-DSA-SHAKE-192s</td><td>SLH-DSA-SHAKE-256s</td></tr>
+</table>
+<p>The design deliberately uses different cryptographic assumptions. Frequently used epoch keys use fast lattice-based schemes (ML-DSA or Falcon). The root/master key uses hash-based SLH-DSA, so a weakness in the lattice family would not automatically compromise the root of trust.</p>
+
+<h3><code>pqc/backend/app/algorithms.py</code></h3>
+<p>This is the adapter around cryptographic libraries. <code>liboqs-python</code> supplies ML-DSA and Falcon; <code>pyspx</code> supplies SLH-DSA. The rest of the project calls a common API—generate key pair, sign, and verify—without needing to know the underlying library differences. It also supplies benchmarking code used by <code>/algorithms</code>.</p>
+
+<h3><code>pqc/backend/app/keystore.py</code></h3>
+<p>This is a thread-safe in-memory key store for the demonstration. It stores private keys only inside the backend process and returns a key ID plus public information to API clients. It is intentionally not production persistence; a real system would replace it with a protected KMS, HSM, or database-backed design.</p>
+
+<h3><code>pqc/backend/app/models.py</code></h3>
+<p>Pydantic request and response schemas. They define the HTTP contract and validate fields such as <code>key_role</code>, <code>epoch</code>, <code>threat_level</code>, Base64 messages, signatures, and key identifiers.</p>
+
+<h3>Backend support files</h3>
+<ul>
+  <li><code>requirements.txt</code>: Python dependencies: FastAPI, Uvicorn, Pydantic, liboqs bindings, pyspx, pytest, and HTTP test client.</li>
+  <li><code>tests/test_service.py</code>: backend tests for algorithm paths, escalation decisions, HTTP endpoints, and key flows.</li>
+  <li><code>rust_bench/</code>: Rust/PQClean-based benchmarking and a cross-check tool that compares measured properties with the live Python API.</li>
+</ul>
+</section>
+
+<section class="pagebreak">
+<h2>7. Smart contract: <code>TransactionRegistry.sol</code></h2>
+<p>The contract is the on-chain policy and audit layer. It inherits OpenZeppelin <code>AccessControl</code> for permissions and <code>Pausable</code> for emergency stopping.</p>
+
+<h3>Roles</h3>
+<table>
+<tr><th>Role</th><th>Who has it in the local demo</th><th>What it can do</th></tr>
+<tr><td><code>DEFAULT_ADMIN_ROLE</code></td><td>Hardhat deployer account</td><td>Change thresholds; pause/unpause; administer roles.</td></tr>
+<tr><td><code>KEY_MANAGER_ROLE</code></td><td>Hardhat deployer account</td><td>Register delegation certificates and revoke epochs.</td></tr>
+<tr><td><code>RELAYER_ROLE</code></td><td>Hardhat account #1 / relay</td><td>Authorize verified payments and submit verification records.</td></tr>
+</table>
+
+<h3>Stored records</h3>
+<ul>
+  <li><strong>DelegationCert:</strong> epoch, subkey owner, issue/expiry times, master-key ID hash, and existence flag.</li>
+  <li><strong>PendingPayment:</strong> exact authorized sender, recipient, amount, epoch, and authentication level. It exists only until the wallet completes payment.</li>
+  <li><strong>TxRecord:</strong> immutable completed transaction details: ID, sender, recipient, amount, epoch, auth level, verification flag, and timestamp.</li>
+  <li><strong>VolumeWindow:</strong> tracks a sender’s amount within the rolling window for high-risk escalation.</li>
+</ul>
+
+<h3>Risk thresholds</h3>
+<p>Default values are <code>1 ether</code> for a single-payment value threshold, <code>5 ether</code> for rolling volume, and a <code>1 day</code> rolling window. <code>determineRequiredAuthLevel</code> returns <code>MASTER_REINFORCED</code> if either the single amount or projected rolling volume exceeds its threshold. Otherwise it returns <code>SUBKEY_ONLY</code>.</p>
+
+<h3>Payment functions</h3>
+<table>
+<tr><th>Function</th><th>Caller</th><th>What it does</th></tr>
+<tr><td><code>authorizeVerifiedPayment(...)</code></td><td>Relay only</td><td>Checks PQC result, certificate existence/expiry/revocation, threshold auth level, replay state, then stores a pending exact payment.</td></tr>
+<tr><td><code>executeVerifiedPayment(txId)</code></td><td>The authorized MetaMask wallet</td><td>Requires pending payment, exact sender, exact ETH value, and valid epoch. Deletes authorization before transfer, records transaction, updates volume, then sends ETH to recipient.</td></tr>
+<tr><td><code>submitVerifiedTransaction(...)</code></td><td>Relay only</td><td>Alternate record-only flow: records an already-verified transaction without moving ETH.</td></tr>
+</table>
+
+<h3>Important safety checks</h3>
+<ul>
+  <li><strong>Replay protection:</strong> <code>txIdUsed</code> rejects duplicate transaction IDs.</li>
+  <li><strong>Exact-payment protection:</strong> MetaMask must send the same sender and wei amount stored by the relay.</li>
+  <li><strong>Certificate checks:</strong> missing, expired, and revoked epochs are rejected.</li>
+  <li><strong>Role checks:</strong> only the relay can authorize; only the key manager can register/revoke certificates.</li>
+  <li><strong>Pause:</strong> admin can stop state-changing payment and authorization functions.</li>
+  <li><strong>Checks-effects-interactions:</strong> the pending authorization is removed and state recorded before the external ETH transfer, reducing re-entrancy risk.</li>
+</ul>
+</section>
+
+<section class="pagebreak">
+<h2>8. Deployment, relay, and tests</h2>
+<h3><code>contract-layer/hardhat.config.js</code></h3>
+<p>Configures Solidity 0.8.24, enables the optimizer, and defines the <code>localhost</code> network at port 8545 with chain ID 31337.</p>
+
+<h3><code>contract-layer/scripts/deploy.js</code></h3>
+<p>Deploys <code>TransactionRegistry</code> with Hardhat account #0 as admin/key manager and account #1 as relay. It writes <code>deployments/localhost.json</code> for inter-layer use, regenerates the frontend’s <code>src/contract.js</code>, and registers an epoch 0 delegation certificate valid for one week. This regeneration is why deployment must be run after starting a fresh local chain.</p>
+
+<h3><code>contract-layer/scripts/relay-server.js</code></h3>
+<p>This is the browser-facing local HTTP relay. It listens on port 3001 and accepts only allowed local Vite origins. It constructs the message <code>sender-&gt;recipient:amountWei</code>, obtains PQC verification, and invokes <code>authorizeVerifiedPayment</code>. When <code>PQC_SERVICE_URL</code> ends in port 8001 it uses the mock service format; otherwise it performs the real backend’s key-generation, signing, and verification sequence.</p>
+
+<h3><code>contract-layer/scripts/relay.js</code></h3>
+<p>A command-line demonstration relay. It exercises normal, high-risk, and deliberately invalid verification paths without the browser UI.</p>
+
+<h3><code>contract-layer/test/TransactionRegistry.test.js</code></h3>
+<p>Hardhat/Mocha tests covering thresholds, certificates, revocation, authorization, duplicate IDs, authentication-level escalation, transaction records, and ETH payment behavior. Run them with <code>npm test</code> from <code>contract-layer</code>.</p>
+
+<h2>9. How to run the complete application</h2>
+<p>Open separate terminals. Keep the services running while using the demo.</p>
+
+<h3>Terminal 1 — local Ethereum network</h3>
+<pre>cd quantum-resistant-blockchain-security-model/contract-layer
+npm run node</pre>
+
+<h3>Terminal 2 — compile/deploy contract</h3>
+<pre>cd quantum-resistant-blockchain-security-model/contract-layer
+npm run deploy:local</pre>
+
+<h3>Terminal 3 — PQC FastAPI backend</h3>
+<pre>cd quantum-resistant-blockchain-security-model/pqc/backend
+source .venv/bin/activate
+python3 -m uvicorn app.main:app --reload --port 8000</pre>
+
+<h3>Terminal 4 — relay</h3>
+<pre>cd quantum-resistant-blockchain-security-model/contract-layer
+# Ensure .env contains: PQC_SERVICE_URL=http://127.0.0.1:8000
+npm run relay:server</pre>
+
+<h3>Terminal 5 — React app</h3>
+<pre>cd quantum-resistant-blockchain-security-model/pqc/frontend
+npm run dev</pre>
+
+<p>Open the Vite URL (usually <code>http://localhost:5173</code>). Connect MetaMask, allow it to switch to Hardhat Local, and use a funded Hardhat test account. Submit payments from the application form—not by using MetaMask’s separate Send button to transfer directly to the contract.</p>
+
+<div class="callout warning"><strong>Local-only warning:</strong> Hardhat accounts, the in-memory PQC keystore, local relay, and default configuration are for development/demo use. Do not use local test keys, an in-memory key store, or localhost CORS rules for a real-money deployment.</div>
+</section>
+
+<section class="pagebreak">
+<h2>10. Common troubleshooting</h2>
+<table>
+<tr><th>Symptom</th><th>Likely cause and fix</th></tr>
+<tr><td>Frontend says the contract is not deployed</td><td>Start Hardhat node, then run <code>npm run deploy:local</code>. Confirm MetaMask and the frontend use chain ID 31337.</td></tr>
+<tr><td>Relay cannot reach PQC service</td><td>Start Uvicorn on port 8000 and set <code>PQC_SERVICE_URL=http://127.0.0.1:8000</code> before starting the relay.</td></tr>
+<tr><td>MetaMask has no ETH</td><td>Import a Hardhat test account into MetaMask after starting the node. These are local test funds only.</td></tr>
+<tr><td><code>PaymentNotAuthorized</code></td><td>The relay did not create a pending authorization for this ID, or it was already consumed. Submit a fresh form request.</td></tr>
+<tr><td><code>PaymentSenderMismatch</code></td><td>The MetaMask account changed after the relay authorized another sender. Reconnect the original account and retry.</td></tr>
+<tr><td><code>IncorrectPaymentAmount</code></td><td>The value attached by the wallet differs from the relay authorization. Submit a fresh transaction; do not edit the value in MetaMask.</td></tr>
+<tr><td>Certificate expired/revoked/missing</td><td>Redeploy locally to seed epoch 0 again, or have a key manager register a valid certificate for the relevant epoch.</td></tr>
+<tr><td>MetaMask activity/nonce state is stale on the local chain</td><td>For this development network only, MetaMask Settings → Developer tools → Delete activity and nonce data can clear local cached activity. It does not remove funds or the deployed contract.</td></tr>
+</table>
+
+<h2>11. Production considerations</h2>
+<ul>
+  <li>Use a real key management system, durable encrypted storage, access logging, key rotation, and backup/recovery procedures instead of the in-memory store.</li>
+  <li>Authenticate and authorize relay requests; do not expose a localhost-style open relay to an untrusted network.</li>
+  <li>Use HTTPS, strict CORS, rate limiting, monitoring, and structured audit logs.</li>
+  <li>Audit the Solidity contract before deploying to a public network and use multisig/timelocked administration for sensitive roles.</li>
+  <li>Define a robust certificate issuance/revocation protocol and a canonical message/transaction-ID format shared by all services.</li>
+  <li>Use a persistent deployment registry and environment-specific addresses; local Hardhat deployments disappear when the node stops.</li>
+</ul>
+
+<h2>12. Summary</h2>
+<p>The project combines a normal wallet payment experience with an adaptive PQC gate. The PQC service selects cryptographic strength according to risk and key role; the relay conveys a verified authorization without gaining access to ETH; MetaMask preserves user control of the final payment; and the contract enforces exact authorization, certificate validity, escalation thresholds, replay protection, and an immutable on-chain record.</p>
+<p class="small">Generated from the repository’s current source structure and implementation.</p>
+</section>
+</body>
+</html>

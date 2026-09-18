@@ -552,6 +552,11 @@ input {
   color: #9a6a00;
 }
 
+.status-pill.verified {
+  background: #dff7ec;
+  color: #087a43;
+}
+
 .status-pill.neutral {
   background: #eceff4;
   color: #667085;

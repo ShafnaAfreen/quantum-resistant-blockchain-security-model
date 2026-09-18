@@ -51,6 +51,14 @@ describe("TransactionRegistry", function () {
       const level = await registry.determineRequiredAuthLevel(alice.address, ethers.parseEther("0.5"));
       expect(level).to.equal(MASTER_REINFORCED);
     });
+
+    it("uses threat level 2 / ML-DSA-87 policy for a high-value epoch-subkey payment", async function () {
+      // 0.9 ETH remains below the 1 ETH master-key boundary, but reaches the
+      // backend's strongest ML-DSA epoch-subkey policy level.
+      const threatLevel = await registry.determineThreatLevel(alice.address, ethers.parseEther("0.9"));
+      expect(threatLevel).to.equal(2);
+      expect(await registry.determineRequiredAuthLevel(alice.address, ethers.parseEther("0.9"))).to.equal(SUBKEY_ONLY);
+    });
   });
 
   describe("delegation cert validation", function () {
@@ -162,6 +170,36 @@ describe("TransactionRegistry", function () {
           .connect(relayer)
           .submitVerifiedTransaction(txId, alice.address, bob.address, ethers.parseEther("2"), 0, SUBKEY_ONLY, true)
       ).to.be.revertedWithCustomError(registry, "InsufficientAuthLevel");
+    });
+  });
+
+  describe("verified ETH payments", function () {
+    it("transfers ETH from the authorized sender after PQC verification", async function () {
+      const txId = ethers.keccak256(ethers.toUtf8Bytes("payment-valid"));
+      const amount = ethers.parseEther("0.3");
+      const recipientBalanceBefore = await ethers.provider.getBalance(bob.address);
+
+      await registry
+        .connect(relayer)
+        .authorizeVerifiedPayment(txId, alice.address, bob.address, amount, 0, SUBKEY_ONLY, true);
+      await registry.connect(alice).executeVerifiedPayment(txId, { value: amount });
+
+      expect(await ethers.provider.getBalance(bob.address)).to.equal(recipientBalanceBefore + amount);
+      const record = await registry.getTransaction(txId);
+      expect(record.verified).to.equal(true);
+      expect(record.amount).to.equal(amount);
+    });
+
+    it("does not let another wallet execute an authorized payment", async function () {
+      const txId = ethers.keccak256(ethers.toUtf8Bytes("payment-wrong-sender"));
+      const amount = ethers.parseEther("0.1");
+      await registry
+        .connect(relayer)
+        .authorizeVerifiedPayment(txId, alice.address, bob.address, amount, 0, SUBKEY_ONLY, true);
+
+      await expect(
+        registry.connect(other).executeVerifiedPayment(txId, { value: amount })
+      ).to.be.revertedWithCustomError(registry, "PaymentSenderMismatch");
     });
   });
 });
